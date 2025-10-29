@@ -44,4 +44,4 @@ LibroDAO, SocioDAO, PrestamoDAO — CRUD y consultas.
 
 # Relación de capas
 
-<img src="./Patron-Modelo-Arquitectónico.drawio.png" alt="Cafe" >
+<img src="./Patron-Modelo-Arquitectónico.drawio.png">
