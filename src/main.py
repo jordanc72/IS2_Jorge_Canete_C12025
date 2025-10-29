@@ -1,5 +1,5 @@
-from src.data.repositorios_prueba import InMemoryDB
-from src.presentacion.vista import Vista
+from data.repositorios_prueba import InMemoryDB
+from presentacion.vista import Vista
 
 
 def main():

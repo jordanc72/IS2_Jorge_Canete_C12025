@@ -1,5 +1,5 @@
-from src.data.repositorios_prueba import InMemoryDB
-from src.dominio.socio import Socio
+from data.repositorios_prueba import InMemoryDB
+from dominio.socio import Socio
 
 
 class ServicioSocios:

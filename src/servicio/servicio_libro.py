@@ -1,5 +1,5 @@
-from src.data.repositorios_prueba import InMemoryDB
-from src.dominio.libro import Libro
+from data.repositorios_prueba import InMemoryDB
+from dominio.libro import Libro
 
 
 class ServicioLibro:

@@ -1,8 +1,8 @@
 import unittest
-from src.data.repositorios_prueba import InMemoryDB
-from src.servicio.servicio_libro import ServicioLibro
-from src.servicio.servicio_socios import ServicioSocios
-from src.servicio.servicio_prestamo import ServicioPrestamo
+from data.repositorios_prueba import InMemoryDB
+from servicio.servicio_libro import ServicioLibro
+from servicio.servicio_socios import ServicioSocios
+from servicio.servicio_prestamo import ServicioPrestamo
 
 class TestBiblioteca(unittest.TestCase):
     def setUp(self):

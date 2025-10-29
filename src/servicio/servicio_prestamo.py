@@ -1,5 +1,5 @@
-from src.data.repositorios_prueba import InMemoryDB
-from src.dominio.prestamo import Prestamo
+from data.repositorios_prueba import InMemoryDB
+from dominio.prestamo import Prestamo
 
 
 class ServicioPrestamo:
