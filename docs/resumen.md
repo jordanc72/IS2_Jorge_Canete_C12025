@@ -1,47 +1,58 @@
- El diseño arquitectónico lo podemos separar en 3 capas fundamentales que detallaremos más adelante. 
+# Propósito y alcance
 
-El patrón elegido para acceso centralizado a BD es el Singleton, con su implementación y validación en Python (modelo sencillo con SQLite in-memory).
+Este documento proporciona una introducción de alto nivel a la base de código del sistema de gestión de bibliotecas. Describe el propósito del sistema, identifica los principales componentes arquitectónicos y explica cómo interactúan para ofrecer la funcionalidad principal. Esta visión general sirve como punto de entrada para comprender la estructura de la base de código antes de sumergirse en subsistemas específicos.
 
-# Identificación de capas
+# Descripción arquitectónica
 
-1) Capas principales y funciones
+El sistema implementa una arquitectura estricta de tres capas con dependencias unidireccionales que fluyen de arriba a abajo. La arquitectura impone una clara separación de las preocupaciones donde las capas superiores dependen de las capas inferiores, pero nunca viceversa.
 
-* Capa de Presentación
+## Relación de capas
 
-Función: interactuar con el usuario (CLI/web).
+<img src="./Diagrama_de_capas.png">
 
-Funciones genéricas:
+### Principios Arquitectónicos Clave:
 
-mostrar_libros_disponibles()
+| Principio | Aplicación |
+| :--- | :--- |
+| Separación de responsabilidades | Cada capa tiene una responsabilidad única y bien definida |
+| Dependencias Unidireccionales | Presentación → Lógica de negocio → Datos|
+| Contexto de datos compartidos | Todos los servicios comparten una sola instancia de `InMemoryDB` |
+|Inyección de dependencia |	Los componentes reciben dependencias a través de los parámetros del constructor |
+| Objetos de dominio inmutables | Las entidades de dominio son simples clases de datos de Python |
 
-form_alta_socio()
 
-form_prestamo()
 
-buscar_por_titulo()
+## Diagrama de clases
 
-* Capa de Lógica de Negocio
+<img src = "./Diagrama_de_clases.png">
 
-Función: formalizar las reglas del dominio (préstamos, devoluciones, multas).
+## Diagrama de dominio
 
-Funciones genérica:
+<img src = "./Diagrama_de_dominio.png">
 
-prestar_libro(socio_id, libro_id) — valida reglas (máx 3 préstamos activos).
 
-devolver_libro(prestamo_id) — calcula multa si corresponde.
+# Marco de Prueba e Infraestructura
 
-calcular_multa(fecha_devolucion, fecha_limite) — regla interna.
+La infraestructura de pruebas se implementa en
+`src/tests/test_biblioteca.py` Uso del estándar del framework unittest de Python. La suite de prueba sigue los mismos patrones arquitectónicos que el sistema de producción, asegurando que las pruebas validen los escenarios de integración realistas.
 
-* Capa de Datos
 
-Función: persistencia y acceso (DAOs).
+## Dependencias de pruebas compartidas
+El metodo setUp `src/tests/test_biblioteca.py` instancia a una sola instancia de InMemoryDB y la inyecta en todos los objetos de servicio. Esto refleja la arquitectura de producción donde todos los componentes comparten una única instancia de base de datos, asegurando que las pruebas validen el comportamiento de integración real en lugar de burlas aisladas.
 
-Componentes:
+|Componente	|Propósito	|
+| :--- | :--- | 
+|self.db|	Almacén de datos compartidos	
+|self.slib|	Servicio de gestión de libros	
+|self.ssoc|	Servicio de gestión de miembros	
+|self.spre|	Servicio de gestión de préstamos	
 
-ConexionDB (Singleton) — punto central de conexión.
+## Accesorios de datos de prueba
+Cada ejecución de prueba comienza con un estado inicial estático  `src/tests/test_biblioteca.py`:
 
-LibroDAO, SocioDAO, PrestamoDAO — CRUD y consultas.
+- Libro 1 (self.b1): "Código limpio" con 2 copias disponibles
+- Libro 2 (self.b2): "No Stock" con 0 copias disponibles (caja de borde para escenarios fuera de stock)
+- Miembro 1 (self.m1): "Ana" con 0 préstamos activos
+- Miembro 2 (self.m2): "Luis" con 0 préstamos activos
 
-# Relación de capas
-
-<img src="./Patron-Modelo-Arquitectónico.drawio.png">
+Este diseño permite pruebas inmediatas de escenarios de éxito y fracaso sin configuración adicional en pruebas individuales.
