@@ -18,28 +18,43 @@ class ServicioPrestamo:
 
 
     def prestar(self, id_socio: int, id_libro: int) -> bool:
-        m = self.db.get_member(id_socio)
-        b = self.db.get_book(id_libro)
-        if not m or not b:
+        print(f"[DEBUG ServicioPrestamo] prestar llamado con socio_id={id_socio}, libro_id={id_libro}")
+        member = self.db.get_member(id_socio)
+        book = self.db.get_book(id_libro)
+        if member is None or book is None:
+            print("socio o libro no encontrado")
             return False
-        if m.active_loans >= ServicioPrestamo.MAX_PRESTAMOS:
-            return False
-        if b.copies <= 0:
-            return False
+        
         # crear préstamo
         lr = self.db.insert_loan(id_socio, id_libro)
-        self.db.update_member_loans(id_socio, m.active_loans + 1)
-        self.db.update_book_copies(id_libro, b.copies - 1)
-        return True
+        self.db.update_member_loans(id_socio, member.active_loans + 1)
+        self.db.update_book_copies(id_libro, book.copies - 1)
+
+        # devolver el id del préstamo creado (truthy si éxito)
+        return lr.id
 
 
     def devolver(self, id_prestamo: int) -> bool:
-        loan = self.db.get_loan(id_prestamo)
-        if not loan or loan.returned:
-           return False
-        self.db.mark_loan_returned(id_prestamo)
-        member = self.db.get_member(loan.member_id)
-        book = self.db.get_book(loan.book_id)
-        self.db.update_member_loans(member.id, member.active_loans - 1)
-        self.db.update_book_copies(book.id, book.copies + 1)
-        return True
+        try:
+            print(f"[DEBUG ServicioPrestamo] devolver llamado con loan_id={id_prestamo}")
+            loan = self.db.get_loan(id_prestamo)
+            if loan is None:
+                print("préstamo no encontrado")
+                return False
+
+            if getattr(loan, 'returned', False):
+                print("préstamo ya devuelto")
+                return False
+
+            # actualizar libro y socio vía repo
+            ok_inc = self.db.increment_copies(loan.book_id)
+            ok_close = self.db.close_loan(id_prestamo)
+
+            member = self.db.get_member(loan.member_id)
+            if member is not None and hasattr(member, 'active_loans'):
+                member.active_loans = max(0, member.active_loans - 1)
+            
+            return ok_inc and ok_close
+        except Exception as e:
+            print(f"[ERROR ServicioPrestamo] excepción en devolver: {e}")
+            return False

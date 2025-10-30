@@ -32,6 +32,7 @@ class InMemoryDB:
     def __init__(self):
         self.books: Dict[int, BookRow] = {}
         self.members: Dict[int, MemberRow] = {}
+        self._next_member_id = 1
         self.loans: Dict[int, LoanRow] = {}
 
 
@@ -57,11 +58,18 @@ class InMemoryDB:
 
 
     # member
-    def insert_member(self, name: str) -> MemberRow:
-        mid = self.next_id()
-        mr = MemberRow(mid, name, 0)
-        self.members[mid] = mr
-        return mr
+    def create_member(self, nombre):
+        from dominio.socio import Socio
+        # Socio parece requerir (id, nombre) en su constructor
+        m = Socio(self._next_member_id, nombre)
+        # asegurar atributos por si Constructor ya los estableció o no
+        if not hasattr(m, 'id') or m.id is None:
+            m.id = self._next_member_id
+        if not hasattr(m, 'active_loans'):
+            m.active_loans = 0
+        self.members[m.id] = m
+        self._next_member_id += 1
+        return m.id
 
 
     def get_member(self, member_id: int) -> Optional[MemberRow]:
@@ -78,16 +86,48 @@ class InMemoryDB:
         lid = self.next_id()
         lr = LoanRow(lid, member_id, book_id, False)
         self.loans[lid] = lr
+        # incrementar contador de préstamos activos del socio si existe
+        member = self.members.get(member_id)
+        if member is not None and hasattr(member, 'active_loans'):
+            member.active_loans += 1
         return lr
 
 
-    def mark_loan_returned(self, loan_id: int):
-        if loan_id in self.loans:
-            self.loans[loan_id].returned = True
-
-    def find_active_loans_by_member(self, member_id: int) -> List[LoanRow]:
-        return [l for l in self.loans.values() if l.member_id == member_id and not l.returned]
-
-
-    def get_loan(self, loan_id: int) -> Optional[LoanRow]:
+    def get_loan(self, loan_id):
+        print(f"[DEBUG InMemoryDB] get_loan({loan_id})")
         return self.loans.get(loan_id)
+
+    def close_loan(self, loan_id):
+
+        print(f"[DEBUG InMemoryDB] close_loan({loan_id})")
+        loan = self.loans.get(loan_id)
+        if not loan:
+            return False
+        # en LoanRow el campo es 'returned'
+        if getattr(loan, 'returned', False):
+            return False
+        loan.returned = True
+        # decrementar préstamos activos del socio asociado si existe
+        member = self.members.get(loan.member_id)
+        if member is not None and hasattr(member, 'active_loans'):
+            member.active_loans = max(0, member.active_loans - 1)
+        return True
+
+
+    def increment_copies(self, book_id):
+        print(f"[DEBUG InMemoryDB] increment_copies({book_id})")
+        book = self.books.get(book_id)
+        if not book:
+            return False
+        book.copies += 1
+        return True
+
+    def decrement_copies(self, book_id):
+        print(f"[DEBUG InMemoryDB] decrement_copies({book_id})")
+        book = self.books.get(book_id)
+        if not book:
+            return False
+        if book.copies <= 0:
+            return False
+        book.copies -= 1
+        return True

@@ -1,14 +1,14 @@
 import unittest
 from data.repositorios_prueba import InMemoryDB
 from servicio.servicio_libro import ServicioLibro
-from servicio.servicio_socios import ServicioSocios
+from servicio.servicio_socio import ServicioSocio
 from servicio.servicio_prestamo import ServicioPrestamo
 
 class TestBiblioteca(unittest.TestCase):
     def setUp(self):
         self.db = InMemoryDB()
         self.slib = ServicioLibro(self.db)
-        self.ssoc = ServicioSocios(self.db)
+        self.ssoc = ServicioSocio(self.db)
         self.spre = ServicioPrestamo(self.db)
         # datos iniciales
         self.b1 = self.slib.crear_libro("Clean Code", 2)
@@ -31,6 +31,7 @@ class TestBiblioteca(unittest.TestCase):
 
     # White-box
     def test_wb_max_loans_prevents(self):
+        # ejemplo: llenar hasta MAX_PRESTAMOS con prestamos válidos
         for i in range(ServicioPrestamo.MAX_PRESTAMOS):
             b = self.slib.crear_libro(f"Temp{i}", 1)
             self.assertTrue(self.spre.prestar(self.m2.id, b.id))
